@@ -1,5 +1,5 @@
-import type { RGB, Region } from '../../core/types';
-export function analyzeGeometry(img: ImageData) {
+import type { RGB, Region, RawImage } from '../../core/types';
+export function analyzeGeometry(img: RawImage) {
   const { width: w, height: h, data } = img;
   const gray = new Float32Array(w * h);
   for (let i = 0; i < gray.length; i++) {

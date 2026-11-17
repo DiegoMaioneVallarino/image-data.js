@@ -1,4 +1,6 @@
-export function analyzeLighting(img: ImageData) {
+import type { RawImage } from '../../core/types';
+
+export function analyzeLighting(img: RawImage) {
   const { data } = img;
   let sum = 0, squares = 0, n = 0;
   for (let i = 0; i < data.length; i += 4) {
