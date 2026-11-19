@@ -61,7 +61,8 @@ export interface TextLine { text: string; /** 0..100 */ confidence: number; box:
 export interface TextResult {
   engine: string;
   languages: string;
-  /** Palabras reconocidas con confianza suficiente */ count: number;
+  /** Palabras reconocidas que pasaron todos los filtros */ count: number;
+  /** Palabras que Tesseract devolvió pero se descartaron (baja confianza o basura); útil para ajustar filtros. */ discarded: number;
   /** Texto completo, una línea por renglón */ text: string;
   /** Fracción de la imagen cubierta por texto (0..1) */ coverage: number;
   lines: TextLine[];

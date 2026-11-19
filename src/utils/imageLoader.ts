@@ -24,6 +24,51 @@ function toBlob(canvas: AnyCanvas, type: string, quality: number): Promise<Blob>
   return new Promise((resolve, reject) => canvas.toBlob(b => (b ? resolve(b) : reject(new Error('No se pudo crear la miniatura'))), type, quality));
 }
 
+const EXT_MIME: Record<string, string> = {
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', jpe: 'image/jpeg', jfif: 'image/jpeg', pjpeg: 'image/jpeg', png: 'image/png', apng: 'image/png',
+  gif: 'image/gif', webp: 'image/webp', avif: 'image/avif', bmp: 'image/bmp', ico: 'image/x-icon', svg: 'image/svg+xml',
+  tif: 'image/tiff', tiff: 'image/tiff', heic: 'image/heic', heif: 'image/heif',
+};
+/**
+ * MIME del archivo. Los navegadores dejan `type` vacío (o 'application/octet-stream') en formatos que el sistema
+ * no conoce (.avif, .jfif…): en ese caso se deduce de la extensión. createImageBitmap detecta el formato por contenido.
+ */
+export function guessMime(file: { name: string; type: string }): string {
+  if (file.type.startsWith('image/')) return file.type;
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+  return EXT_MIME[ext] ?? file.type;
+}
+export const isImageFile = (file: { name: string; type: string }) => guessMime(file).startsWith('image/');
+export const isSvg = (file: { name: string; type: string }) => guessMime(file) === 'image/svg+xml';
+
+/**
+ * createImageBitmap no decodifica SVG, así que se rasteriza con <img> + canvas (solo hilo principal).
+ * Al ser vectorial se dibuja a `maxSide` aunque el SVG declare un tamaño menor. El resultado conserva el
+ * nombre del archivo pero es un PNG (el `mime` del descriptor será image/png).
+ */
+export async function rasterizeSvg(file: File, maxSide = 1024): Promise<File> {
+  if (typeof document === 'undefined') throw new Error(`${file.name}: los SVG solo se pueden rasterizar en el hilo principal.`);
+  const url = URL.createObjectURL(new Blob([file], { type: 'image/svg+xml' }));
+  try {
+    const img = new Image();
+    img.src = url;
+    try { await img.decode(); } catch { throw new Error(`${file.name}: SVG inválido o con recursos externos que no se pueden cargar.`); }
+    const nw = img.naturalWidth || 1024, nh = img.naturalHeight || 1024;
+    const scale = maxSide / Math.max(nw, nh);
+    const canvas = Object.assign(document.createElement('canvas'), { width: Math.max(1, Math.round(nw * scale)), height: Math.max(1, Math.round(nh * scale)) });
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas 2D no disponible');
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob>((res, rej) => canvas.toBlob(b => (b ? res(b) : rej(new Error(`${file.name}: no se pudo rasterizar el SVG`))), 'image/png'));
+    return new File([blob], file.name, { type: 'image/png' });
+  } finally { URL.revokeObjectURL(url); }
+}
+
+/** Deja el archivo listo para decodificar: hoy solo rasteriza SVG. No-op para el resto. */
+export async function prepareFile(file: File): Promise<File> {
+  return isSvg(file) ? rasterizeSvg(file) : file;
+}
+
 export interface Decoded { pixels: RawImage; source: SourceInfo; thumbnail: Blob }
 
 /**
@@ -32,7 +77,8 @@ export interface Decoded { pixels: RawImage; source: SourceInfo; thumbnail: Blob
  * la orientación EXIF por defecto.
  */
 export async function decodeFile(file: File, maxSide = 512, thumbSide = 320): Promise<Decoded> {
-  if (!file.type.startsWith('image/')) throw new Error(`${file.name}: no es una imagen.`);
+  if (!isImageFile(file)) throw new Error(`${file.name}: no es una imagen reconocida.`);
+  if (isSvg(file)) throw new Error(`${file.name}: un SVG debe pasar antes por prepareFile().`);
   const bitmap = await createImageBitmap(file);
   try {
     const { ctx, canvas } = draw(bitmap, maxSide);
@@ -41,7 +87,7 @@ export async function decodeFile(file: File, maxSide = 512, thumbSide = 320): Pr
     const thumbnail = await toBlob(thumb.canvas, 'image/webp', 0.82);
     return {
       pixels: { width: pixels.width, height: pixels.height, data: pixels.data },
-      source: { filename: file.name, bytes: file.size, mime: file.type, width: bitmap.width, height: bitmap.height },
+      source: { filename: file.name, bytes: file.size, mime: guessMime(file), width: bitmap.width, height: bitmap.height },
       thumbnail,
     };
   } finally { bitmap.close(); }

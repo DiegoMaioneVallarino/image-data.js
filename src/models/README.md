@@ -25,7 +25,10 @@ Sin el archivo, la app funciona igual y muestra el aviso "Objetos desactivados".
    (unos MB por idioma) desde su CDN, y el navegador los cachea.
 3. Sin internet: copia `worker.min.js`, el `.wasm.js` de `tesseract.js-core` y los `.traineddata.gz` a `public/tesseract/`
    y pasa `{ workerPath, corePath, langPath }` apuntando a esas rutas.
-4. Ajustes: `minConfidence` (60; súbelo si aparece texto basura en fotos), `maxSide` (1280) y `minSide` (640).
+4. Anti-falsos positivos: se descartan palabras con confianza < `minConfidence` (70) o que no parecen palabras
+   (letras sueltas, 'iii', sin vocales, mayúsculas caóticas) y, si quedan menos de `minWords` (2), se declara "sin texto".
+   En fotos el modo es más estricto (confianza >= 80 y 3 palabras). `skipPhotos: true` desactiva el OCR en fotos.
+   `text.discarded` cuenta lo descartado, útil para ajustar. Otros ajustes: `maxSide` (1280) y `minSide` (640).
 
 El OCR lee a mayor resolución que el análisis base (que reduce a 512 px) para no perder texto pequeño.
 Tarda del orden de 1 a 3 s por imagen; con `concurrency` alta cada worker carga su propio Tesseract (memoria).

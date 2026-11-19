@@ -1,76 +1,43 @@
-# React + TypeScript + Vite
+# ImageData.js v0.5.0
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Librería TypeScript de análisis visual para navegador y núcleo de análisis de píxeles compatible con Node.js. Incluye laboratorio React independiente.
 
-Currently, two official plugins are available:
+## Instalación de desarrollo
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install
+npm run dev
+npm run typecheck
+npm test
+npm run build:lib
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+## Usar en Empireterest sin publicar en npm
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Desde `image-data.js`, ejecutar `npm run build:lib` y luego `npm pack` (crea un `.tgz`). En Empireterest:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install ../image-data.js/image-data.js-0.5.0.tgz
 ```
-"# image-data.js" 
+
+La ruta es un ejemplo: ajustar a la ubicación real del `.tgz`.
+
+```ts
+import { analyzeFile, rankImages } from 'image-data.js';
+
+const { descriptor, thumbnail, warnings } = await analyzeFile(file);
+const hits = rankImages([descriptor], { orientation: 'portrait' });
+```
+
+`analyzeFile` requiere APIs de imagen del navegador. `analyzePixels` admite un objeto de píxeles en Node.js. Los modelos ONNX y OCR requieren configuración y recursos externos; no se activan por defecto.
+
+## API pública
+
+`analyzeImage`, `analyzeFile`, `analyzePixels`, `analyzeBatch`, `searchImages`, `rankImages`, detectores opcionales y tipos del descriptor. El worker se distribuye como `dist/analyzer.worker.js` junto al módulo.
+
+## Limitaciones
+
+- La búsqueda usa descriptores en memoria; IndexedDB existe en el laboratorio, pero no es un índice persistente de pins de Empireterest.
+- El worker y las rutas de modelos deben probarse en la aplicación consumidora tras instalar el paquete.
+- No se incluyen modelos ONNX ni idiomas OCR offline.
+- El esquema de descriptores permanece en `0.4.0`: la versión `0.5.0` corresponde al paquete, no a un cambio de esquema.

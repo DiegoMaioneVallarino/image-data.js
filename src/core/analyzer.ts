@@ -1,6 +1,6 @@
 import type { ImageDescriptor, RawImage, SourceInfo } from './types';
 import { SCHEMA_VERSION } from './schema';
-import { decodeFile, decodePixels } from '../utils/imageLoader';
+import { decodeFile, decodePixels, prepareFile } from '../utils/imageLoader';
 import { analyzeMetadata } from '../analyzers/metadata/metadataAnalyzer';
 import { analyzeColors } from '../analyzers/colors/colorAnalyzer';
 import { analyzeLighting } from '../analyzers/lighting/lightingAnalyzer';
@@ -40,6 +40,7 @@ export function analyzePixels(pixels: RawImage, source: SourceInfo): ImageDescri
 }
 
 export async function analyzeFile(file: File, opts: AnalyzeOptions = {}): Promise<Analyzed> {
+  file = await prepareFile(file); // SVG -> PNG (no-op para el resto)
   const { pixels, source, thumbnail } = await decodeFile(file);
   const descriptor = analyzePixels(pixels, source);
   const warnings: string[] = [];
@@ -54,11 +55,11 @@ export async function analyzeFile(file: File, opts: AnalyzeOptions = {}): Promis
     try { descriptor.objects = await (await getObjectDetector(opts.objects)).detect(pixels); }
     catch (e) { warnings.push(`Objetos desactivados: ${e instanceof Error ? e.message : String(e)}`); }
   }
-  if (opts.text) {
+  if (opts.text && !(opts.text.skipPhotos && descriptor.kind?.type === 'photo')) {
     try {
       // El OCR lee a más resolución que el análisis base (512 px), si no el texto pequeño se pierde.
       const big = await decodePixels(file, opts.text.maxSide ?? 1280, opts.text.minSide ?? 640);
-      descriptor.text = await (await getTextReader(opts.text)).read(big);
+      descriptor.text = await (await getTextReader(opts.text)).read(big, { strict: descriptor.kind?.type === 'photo' });
     } catch (e) { warnings.push(`Texto desactivado: ${e instanceof Error ? e.message : String(e)}`); }
   }
   // La descripción se rehace al final para incorporar rostros y objetos.

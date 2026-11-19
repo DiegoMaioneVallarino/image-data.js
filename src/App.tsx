@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { analyzeBatch } from './core/pipeline';
+import { isImageFile } from './utils/imageLoader';
 import { rankImages, type ImageQuery } from './search/queryEngine';
 import { clearAll, loadAll, putMany, removeOne } from './utils/store';
 import type { FaceOptions } from './analyzers/faces/faceAnalyzer';
@@ -60,14 +61,18 @@ export default function App() {
 
   async function add(files: FileList | null) {
     if (!files?.length) return;
-    const images = Array.from(files).filter(f => f.type.startsWith('image/'));
-    setBusy(true); setErrors([]);
+    // Se acepta por MIME o por extensión (.avif/.jfif llegan a veces con type vacío) y se AVISA de lo omitido.
+    const all = Array.from(files);
+    const images = all.filter(isImageFile);
+    const skipped = all.filter(f => !isImageFile(f)).map(f => `${f.name}: omitido, no se reconoce como imagen (tipo "${f.type || 'vacío'}").`);
+    if (!images.length) { setErrors(skipped.length ? skipped : ['No se seleccionó ninguna imagen.']); return; }
+    setBusy(true); setErrors(skipped); setProgress(`0/${images.length} · la primera vez carga los modelos`);
     try {
       const { ok, failed, warnings } = await analyzeBatch(images, { faces: FACES, objects: OBJECTS, text: TEXT, onProgress: (n, total) => setProgress(`${n}/${total}`) });
       const next = ok.map(a => ({ descriptor: a.descriptor, url: makeUrl(a.thumbnail) }));
       setEntries(old => [...old, ...next]);
       if (next.length) setSelected(next[0].descriptor.id);
-      setErrors([...warnings, ...failed.map(f => `${f.file.name}: ${f.error}`)]);
+      setErrors([...skipped, ...warnings, ...failed.map(f => f.error.startsWith(f.file.name) ? f.error : `${f.file.name}: ${f.error}`)]);
       await putMany(ok.map(a => ({ id: a.descriptor.id, descriptor: a.descriptor, thumbnail: a.thumbnail })))
         .catch(() => setErrors(e => [...e, 'No se pudo guardar el índice; seguirá solo en memoria.']));
     } finally { setBusy(false); setProgress(''); }
@@ -93,7 +98,7 @@ export default function App() {
   return <main>
     <header><div><h1>ImageData.js</h1><p>Visual analysis laboratory · v{SCHEMA_VERSION}</p></div><span>{entries.length} imágenes analizadas · {visible.length} visibles</span></header>
     <section className="toolbar">
-      <label className="upload">{busy ? `Analizando ${progress}` : '+ Cargar imágenes'}<input type="file" accept="image/*" multiple disabled={busy} onChange={e => { void add(e.target.files); e.target.value = ''; }} /></label>
+      <label className="upload">{busy ? `Analizando ${progress}` : '+ Cargar imágenes'}<input type="file" accept="image/*,.avif,.jfif,.webp,.bmp,.svg,.gif,.tif,.tiff" multiple disabled={busy} onChange={e => { void add(e.target.files); e.target.value = ''; }} /></label>
       <input type="search" className="search" placeholder="Buscar: perro, persona, luminosa…" value={text} onChange={e => setText(e.target.value)} />
       <select value={kind} onChange={e => setKind(e.target.value as ImageKind | '')}><option value="">Cualquier tipo</option><option value="photo">Foto</option><option value="graphic">Ilustración / gráfico</option><option value="pixel-art">Pixel art</option></select>
       <label className="check"><input type="checkbox" checked={withText} onChange={e => setWithText(e.target.checked)} /> Con texto</label>
