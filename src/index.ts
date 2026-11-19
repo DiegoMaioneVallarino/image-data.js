@@ -17,3 +17,8 @@ export type { ImageQuery, SearchHit } from './search/queryEngine';
 
 export { matchesSpatial } from './search/spatial';
 export type { SpatialQuery, SpatialSelector, SpatialConstraint, SpatialRelation, SpatialEntity, Box } from './search/spatial';
+
+export { normalizeEmbedding, cosineSimilarity, embedImage, embedText } from './semantic/embeddings';
+export type { EmbeddingProvider, EmbeddingRecord } from './semantic/embeddings';
+export { VisualIndex } from './semantic/index';
+export type { SimilarityHit, SimilarityOptions } from './semantic/index';

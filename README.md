@@ -45,3 +45,7 @@ const hits = rankImages([descriptor], { orientation: 'portrait' });
 ## v0.6 Spatial Search
 
 See [SPATIAL_SEARCH.md](SPATIAL_SEARCH.md) for spatial filters, object relationships and usage examples.
+
+## v0.7: búsqueda visual
+
+Consulta [SEMANTIC_SEARCH.md](./SEMANTIC_SEARCH.md). Incluye un índice coseno y adaptador para modelos externos, pero **no incorpora pesos CLIP**.
