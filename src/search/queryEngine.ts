@@ -1,6 +1,10 @@
+import { matchesSpatial } from './spatial';
+import type { SpatialQuery } from './spatial';
 import type { ColorName, ImageDescriptor, ImageKind, Orientation, RegionName, Temperature } from '../core/types';
 
 export interface ImageQuery {
+  /** Spatial predicates on detected objects, faces and OCR text. */
+  spatial?: SpatialQuery;
   orientation?: Orientation;
   hasTransparency?: boolean;
   minBrightness?: number; maxBrightness?: number;
@@ -54,6 +58,7 @@ export function rankImages(items: ImageDescriptor[], q: ImageQuery): SearchHit[]
 
   const hits: SearchHit[] = [];
   for (const d of items) {
+    if (q.spatial && !matchesSpatial(d, q.spatial)) continue;
     if (q.orientation && d.metadata.orientation !== q.orientation) continue;
     if (q.hasTransparency !== undefined && d.metadata.hasTransparency !== q.hasTransparency) continue;
     if (q.temperature && d.colors.temperature !== q.temperature) continue;

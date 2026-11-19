@@ -41,3 +41,7 @@ const hits = rankImages([descriptor], { orientation: 'portrait' });
 - El worker y las rutas de modelos deben probarse en la aplicación consumidora tras instalar el paquete.
 - No se incluyen modelos ONNX ni idiomas OCR offline.
 - El esquema de descriptores permanece en `0.4.0`: la versión `0.5.0` corresponde al paquete, no a un cambio de esquema.
+
+## v0.6 Spatial Search
+
+See [SPATIAL_SEARCH.md](SPATIAL_SEARCH.md) for spatial filters, object relationships and usage examples.

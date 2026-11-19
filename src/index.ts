@@ -14,3 +14,6 @@ export { searchImages, rankImages } from './search/queryEngine';
 export { SCHEMA_VERSION, isCurrent, migrate } from './core/schema';
 export type { ImageDescriptor, RawImage, SourceInfo, RGB, Region, ColorSample, ColorName, RegionName, FaceItem, FacesResult, ObjectItem, ObjectsResult, ImageKind, KindResult, TextLine, TextResult, Temperature, Orientation } from './core/types';
 export type { ImageQuery, SearchHit } from './search/queryEngine';
+
+export { matchesSpatial } from './search/spatial';
+export type { SpatialQuery, SpatialSelector, SpatialConstraint, SpatialRelation, SpatialEntity, Box } from './search/spatial';
