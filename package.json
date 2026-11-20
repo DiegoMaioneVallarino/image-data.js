@@ -1,6 +1,6 @@
 {
   "name": "image-data.js",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "private": true,
   "type": "module",
   "description": "Motor de análisis e indexación visual para navegador",

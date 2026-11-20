@@ -1,3 +1,4 @@
+import type { ImageAnnotation } from '../annotations/engine';
 import type { VisualProfile } from '../visual/colorEngine';
 export type Orientation = 'portrait' | 'landscape' | 'square';
 export interface RGB { r: number; g: number; b: number }
@@ -111,6 +112,8 @@ export interface ImageDescriptor {
   caption?: string;
   /** Etiquetas en español derivadas del descriptor, sin repetir. */
   tags?: string[];
+  /** v0.9.2: manually or externally annotated image regions */
+  annotations?: ImageAnnotation[];
   /** v0.9.1: perceptual palette and spatial light/color profile */
   visual?: VisualProfile;
   analyzedAt: string;

@@ -33,3 +33,19 @@ export async function loadAll(): Promise<{ items: StoredImage[]; stale: number }
 export const putMany = (items: StoredImage[]) => tx('readwrite', s => { items.forEach(i => s.put(i)); });
 export const removeOne = (id: string) => tx('readwrite', s => { s.delete(id); });
 export const clearAll = () => tx('readwrite', s => { s.clear(); });
+
+/** Update annotations without replacing the thumbnail or other descriptor fields. */
+export async function updateStoredAnnotations(id: string, annotations: import('../annotations/engine').ImageAnnotation[]): Promise<void> {
+  const db=await open();
+  await new Promise<void>((resolve,reject)=>{
+    const transaction=db.transaction(STORE,'readwrite');
+    const store=transaction.objectStore(STORE);
+    const request=store.get(id);
+    request.onsuccess=()=>{
+      const row=request.result as StoredImage|undefined;
+      if(row)store.put({...row,descriptor:{...row.descriptor,annotations}});
+    };
+    transaction.oncomplete=()=>resolve();
+    transaction.onerror=transaction.onabort=()=>reject(transaction.error);
+  }).finally(()=>db.close());
+}

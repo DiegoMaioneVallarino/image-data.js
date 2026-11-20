@@ -27,3 +27,6 @@ export { verifyOcrPasses } from './analyzers/text/verifyOcr';
 
 export { analyzeVisual } from './visual/colorEngine';
 export type { VisualOptions, VisualProfile, VisualCell, PaletteTone, LightProfile } from './visual/colorEngine';
+
+export { boxFromPoints, validateAnnotation, addAnnotation, removeAnnotation, containsPoint, extractRegion, analyzeAnnotation } from './annotations/engine';
+export type { ImageAnnotation, AnnotationGeometry, Point } from './annotations/engine';

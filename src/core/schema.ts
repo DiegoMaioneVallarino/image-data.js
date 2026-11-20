@@ -2,7 +2,7 @@ import type { ImageDescriptor } from './types';
 import { describe } from '../analyzers/caption/captionAnalyzer';
 
 /** Súbela cuando cambie la forma del descriptor. */
-export const SCHEMA_VERSION = '0.9.1';
+export const SCHEMA_VERSION = '0.9.2';
 
 export function isCurrent(d: { version?: string }): d is ImageDescriptor {
   return d?.version === SCHEMA_VERSION;
@@ -18,9 +18,9 @@ export function isCurrent(d: { version?: string }): d is ImageDescriptor {
  */
 export function migrate(d: { version?: string }): ImageDescriptor | null {
   if (isCurrent(d)) return d;
-  if (d?.version === '0.2.0' || d?.version === '0.3.0' || d?.version === '0.4.0') {
+  if (d?.version === '0.9.1' || d?.version === '0.8.0' || d?.version === '0.7.0' || d?.version === '0.6.0' || d?.version === '0.5.0' || d?.version === '0.2.0' || d?.version === '0.3.0' || d?.version === '0.4.0') {
     const old = d as unknown as ImageDescriptor;
-    return { ...old, version: SCHEMA_VERSION, visual: undefined, ...describe(old) };
+    return { ...old, version: SCHEMA_VERSION, annotations: old.annotations ?? [], visual: old.visual, ...describe(old) };
   }
   return null;
 }

@@ -1,8 +1,10 @@
+import { AnnotationEditor } from './annotations/AnnotationEditor';
+import type { ImageAnnotation } from './annotations/engine';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { analyzeBatch } from './core/pipeline';
 import { isImageFile } from './utils/imageLoader';
 import { rankImages, type ImageQuery } from './search/queryEngine';
-import { clearAll, loadAll, putMany, removeOne } from './utils/store';
+import { clearAll, loadAll, putMany, removeOne, updateStoredAnnotations } from './utils/store';
 import type { FaceOptions } from './analyzers/faces/faceAnalyzer';
 import type { ObjectOptions } from './analyzers/objects/objectAnalyzer';
 import type { TextOptions } from './analyzers/text/textAnalyzer';
@@ -78,6 +80,13 @@ export default function App() {
     } finally { setBusy(false); setProgress(''); }
   }
 
+  async function updateAnnotations(id: string, annotations: ImageAnnotation[]) {
+    setEntries(old=>old.map(e=>e.descriptor.id===id?{...e,descriptor:{...e.descriptor,annotations}}:e));
+    try {
+      await updateStoredAnnotations(id,annotations);
+    }catch{setErrors(old=>[...old,'No se pudieron guardar las anotaciones en IndexedDB.']);}
+  }
+
   function remove(id: string) {
     const e = entries.find(x => x.descriptor.id === id);
     if (e) freeUrl(e.url);
@@ -139,6 +148,7 @@ export default function App() {
         </section>}
         <p>Objetos: {active.objects ? (active.objects.count ? Object.entries(active.objects.counts).map(([c, n]) => `${c} ×${n}`).join(', ') : 'ninguno') : 'sin analizar'}</p>
         <p>Rostros: {active.faces ? `${active.faces.count}${active.faces.count ? ` · mayor ${(active.faces.largestAreaRatio * 100).toFixed(1)}%` : ''}` : 'sin analizar'}</p>
+        <AnnotationEditor key={active.id} url={entries.find(e=>e.descriptor.id===active.id)!.url} annotations={active.annotations??[]} onChange={items=>{void updateAnnotations(active.id,items);}} />
         <button onClick={() => download(active, `${active.filename}.json`)}>Descargar JSON</button>{' '}
         <button onClick={() => remove(active.id)}>Quitar del índice</button>
         <pre>{JSON.stringify(active, null, 2)}</pre></> : <p>Selecciona una imagen.</p>}</aside>
