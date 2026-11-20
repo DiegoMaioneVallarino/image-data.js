@@ -24,3 +24,6 @@ export { VisualIndex } from './semantic/index';
 export type { SimilarityHit, SimilarityOptions } from './semantic/index';
 
 export { verifyOcrPasses } from './analyzers/text/verifyOcr';
+
+export { analyzeVisual } from './visual/colorEngine';
+export type { VisualOptions, VisualProfile, VisualCell, PaletteTone, LightProfile } from './visual/colorEngine';

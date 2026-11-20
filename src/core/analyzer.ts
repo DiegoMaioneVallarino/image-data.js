@@ -1,3 +1,4 @@
+import { analyzeVisual } from '../visual/colorEngine';
 import type { ImageDescriptor, RawImage, SourceInfo } from './types';
 import { SCHEMA_VERSION } from './schema';
 import { decodeFile, decodePixels, prepareFile } from '../utils/imageLoader';
@@ -33,7 +34,7 @@ export function analyzePixels(pixels: RawImage, source: SourceInfo): ImageDescri
   const d: ImageDescriptor = {
     version: SCHEMA_VERSION, id: newId(), filename: source.filename,
     metadata: analyzeMetadata(source, pixels), colors: analyzeColors(pixels),
-    lighting: analyzeLighting(pixels), geometry: analyzeGeometry(pixels), kind: analyzeKind(pixels),
+    lighting: analyzeLighting(pixels), visual: analyzeVisual(pixels), geometry: analyzeGeometry(pixels), kind: analyzeKind(pixels),
     analyzedAt: new Date().toISOString(),
   };
   return Object.assign(d, describe(d));

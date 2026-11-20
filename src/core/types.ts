@@ -1,3 +1,4 @@
+import type { VisualProfile } from '../visual/colorEngine';
 export type Orientation = 'portrait' | 'landscape' | 'square';
 export interface RGB { r: number; g: number; b: number }
 
@@ -110,5 +111,7 @@ export interface ImageDescriptor {
   caption?: string;
   /** Etiquetas en español derivadas del descriptor, sin repetir. */
   tags?: string[];
+  /** v0.9.1: perceptual palette and spatial light/color profile */
+  visual?: VisualProfile;
   analyzedAt: string;
 }
