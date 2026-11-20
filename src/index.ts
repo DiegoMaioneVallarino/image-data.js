@@ -22,3 +22,5 @@ export { normalizeEmbedding, cosineSimilarity, embedImage, embedText } from './s
 export type { EmbeddingProvider, EmbeddingRecord } from './semantic/embeddings';
 export { VisualIndex } from './semantic/index';
 export type { SimilarityHit, SimilarityOptions } from './semantic/index';
+
+export { verifyOcrPasses } from './analyzers/text/verifyOcr';

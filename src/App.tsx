@@ -16,7 +16,7 @@ const FACES: FaceOptions = { modelUrl: '/models/version-RFB-320.onnx' };
 // Coloca ssd_mobilenet_v1_12.onnx en public/models/. Sin el archivo todo funciona salvo objetos.
 const OBJECTS: ObjectOptions = { modelUrl: '/models/ssd_mobilenet_v1_12.onnx' };
 // OCR con Tesseract.js: descarga el motor y los idiomas desde su CDN la primera vez (ver models/README.md para usarlo sin internet).
-const TEXT: TextOptions = { languages: 'eng+spa' };
+const TEXT: TextOptions = { languages: 'eng+spa', verification: 'conservative' };
 const COLORS: ColorName[] = ['red', 'orange', 'yellow', 'green', 'cyan', 'blue', 'purple', 'pink', 'brown', 'black', 'white', 'gray'];
 
 export default function App() {
@@ -126,6 +126,17 @@ export default function App() {
         {active.tags && active.tags.length > 0 && <div className="tags">{active.tags.map(t => <button key={t} onClick={() => setText(t)}>{t}</button>)}</div>}
         <p>Tipo: {active.kind ? `${active.kind.type}${active.kind.metrics.blockSize > 1 ? ` (píxel ×${active.kind.metrics.blockSize})` : ''}` : 'sin analizar'}</p>
         <p>Texto: {active.text ? (active.text.count ? `${active.text.count} palabras · ${(active.text.coverage * 100).toFixed(1)}% de la imagen` : 'ninguno') : 'sin analizar'}</p>
+        {active.text?.verification && <section className="ocr-diagnostics">
+          <strong>OCR · verificación</strong>
+          <p>{active.text.verification.confirmed} líneas confirmadas de {active.text.verification.candidates} candidatas.</p>
+          {active.text.verification.rejected.length > 0 && <details><summary>Ver lecturas descartadas ({active.text.verification.rejected.length})</summary>
+            <ul>{active.text.verification.rejected.map((line, i) => <li key={i}>{line.text} ({line.confidence.toFixed(0)}%) — {line.reason}</li>)}</ul>
+          </details>}
+          <div className="ocr-preview" style={{ position: 'relative', width: '100%' }}>
+            <img src={entries.find(e => e.descriptor.id === active.id)?.url} alt="Vista OCR" style={{ display: 'block', width: '100%' }} />
+            {active.text.lines.map((line, i) => <div key={i} title={`${line.text} · ${line.confidence}%`} style={{ position: 'absolute', left: `${line.box.x * 100}%`, top: `${line.box.y * 100}%`, width: `${line.box.w * 100}%`, height: `${line.box.h * 100}%`, border: '2px solid #16a34a', boxSizing: 'border-box', pointerEvents: 'none' }} />)}
+          </div>
+        </section>}
         <p>Objetos: {active.objects ? (active.objects.count ? Object.entries(active.objects.counts).map(([c, n]) => `${c} ×${n}`).join(', ') : 'ninguno') : 'sin analizar'}</p>
         <p>Rostros: {active.faces ? `${active.faces.count}${active.faces.count ? ` · mayor ${(active.faces.largestAreaRatio * 100).toFixed(1)}%` : ''}` : 'sin analizar'}</p>
         <button onClick={() => download(active, `${active.filename}.json`)}>Descargar JSON</button>{' '}

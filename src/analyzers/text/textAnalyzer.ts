@@ -1,4 +1,5 @@
 import type { RawImage, TextLine, TextResult } from '../../core/types';
+import { verifyOcrPasses } from './verifyOcr';
 import { TimeoutError, withTimeout } from '../../utils/async';
 
 export const TEXT_ENGINE = 'tesseract.js';
@@ -6,6 +7,8 @@ export const TEXT_ENGINE = 'tesseract.js';
 export interface TextOptions {
   /** Idiomas de Tesseract unidos con '+'. Por defecto 'eng+spa'. */
   languages?: string;
+  /** Verifica líneas con una segunda lectura en escala de grises. Reduce falsos positivos, puede omitir texto difícil. */
+  verification?: 'off' | 'conservative';
   /** Confianza mínima por palabra (0..100). Por defecto 70. En fotos se exige al menos 80. */
   minConfidence?: number;
   /** Palabras plausibles mínimas para aceptar que hay texto; con menos se devuelve count 0. Por defecto 2 (3 en fotos). */
@@ -123,7 +126,18 @@ export async function createTextReader(opts: TextOptions = {}): Promise<TextRead
       const { data } = await withTimeout(worker.recognize(toCanvas(img), {}, { blocks: true }), readMs, `El OCR tardó más de ${Math.round(readMs / 1000)} s en una imagen`);
       const minConfidence = Math.max(opts.minConfidence ?? 70, ro.strict ? 80 : 0);
       const minWords = Math.max(opts.minWords ?? 2, ro.strict ? 3 : 0);
-      return decodeText(data.blocks, img, languages, { minConfidence, minWords });
+      const first = decodeText(data.blocks, img, languages, { minConfidence, minWords });
+      if ((opts.verification ?? 'conservative') === 'off' || first.count === 0) return first;
+      // Segundo pase sobre el mismo lienzo en escala de grises, sin alterar coordenadas.
+      const gray = new Uint8ClampedArray(img.data);
+      for (let i = 0; i < gray.length; i += 4) {
+        const y = Math.round(0.299 * gray[i] + 0.587 * gray[i + 1] + 0.114 * gray[i + 2]);
+        gray[i] = gray[i + 1] = gray[i + 2] = y;
+      }
+      const secondImage = { ...img, data: gray };
+      const { data: secondData } = await withTimeout(worker.recognize(toCanvas(secondImage), {}, { blocks: true }), readMs, 'Segundo pase OCR agotado');
+      const second = decodeText(secondData.blocks, img, languages, { minConfidence, minWords: 1 });
+      return verifyOcrPasses(first, second);
     },
     async dispose() { await worker.terminate(); },
   };

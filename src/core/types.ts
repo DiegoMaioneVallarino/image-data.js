@@ -66,6 +66,11 @@ export interface TextResult {
   /** Texto completo, una línea por renglón */ text: string;
   /** Fracción de la imagen cubierta por texto (0..1) */ coverage: number;
   lines: TextLine[];
+  /** Diagnóstico opcional; las líneas rechazadas NO se indexan como texto. */
+  verification?: {
+    mode: 'conservative'; candidates: number; confirmed: number;
+    rejected: (TextLine & { reason: string })[];
+  };
 }
 export interface Region { name: string; average: RGB; brightness: number; edgeDensity: number }
 
